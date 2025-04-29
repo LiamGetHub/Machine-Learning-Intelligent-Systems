@@ -1,0 +1,156 @@
+from nltk import word_tokenize
+
+
+# extract_words returns a list with the words in a text
+
+def extract_words(text):
+    return list(
+        word.lower() for word in word_tokenize(text)
+        if any(c.isalpha() for c in word)
+    )
+
+# load_file returns a tuple with the list of words in the input file and the total lines read, the function extend() adds multiple items to a list
+
+def load_file(file_name):
+    total_lines = 0
+
+    words = []
+
+    with open(file_name, "r") as f:
+        for line in f:
+            words.extend(extract_words(line))
+
+            total_lines += 1
+
+    return (words, total_lines)
+
+
+#words in positive reviews
+
+words_in_positive_reviews, positive_reviews = load_file("positive_reviews.txt")
+
+print(words_in_positive_reviews, positive_reviews)
+
+
+#words in negative reviews
+
+words_in_negative_reviews, negative_reviews = load_file("negative_reviews.txt")
+
+print(words_in_negative_reviews, negative_reviews)
+
+
+def calculate_word_frequency(words_in_positive_reviews, words_in_negative_reviews):
+    # each entry corresponds with a word, and its value with the word's frequency in positive and negative reviews
+    # for example, 'enjoyed': [2, 0] indicates that 'enjoyed' appears 2 times in positive reviews and zero times in negative reviews
+
+    frequency = {}
+
+    # for each word in a positive review, if the word is not in the dictionary it adds a new entry with frequency [1, 0]
+    # otherwise, it increments the first value of the list, which corresponds to positive reviews
+
+    for word in words_in_positive_reviews:
+        if word in frequency.keys():
+            frequency[word][0] += 1
+        else:
+            frequency[word] = [1, 0]
+
+    # for each word in a negative review, if the word is not in the dictionary it adds a new entry with frequency [0, 1]
+    # otherwise, it increments the second value of the list, which corresponds to negative reviews
+
+    for word in words_in_negative_reviews:
+        if word in frequency.keys():
+            frequency[word][1] += 1
+        else:
+            frequency[word] = [0, 1]
+
+    return frequency
+
+
+
+# calculate_word_probability returns a dictionary with word's probability in positive and negative reviews
+
+def calculate_word_probability(frequency, words_in_positive_reviews, words_in_negative_reviews):
+    # each entry corresponds with a word, and its value with the word's probability in positive and negative reviews
+    # for example, 'enjoyed': [0.05263157894736842, 0.015625] indicates that 'enjoyed' appears in positive reviews with
+    # probability 0.05263157894736842, and in negative reviews with probability 0.015625
+
+    # for each word in the dictionary frequency, it adds a new word in the dictionary probability, the probability of a
+    # word is calculated using additive smoothing to avoid probability zero. Laplace Smoothing adds 1 to each value in
+    # the probability distribution, pretending that all words have been observed at least once
+
+    probability = {}
+
+    for word in frequency:
+        positive = (frequency[word][0] + 1)/(len(words_in_positive_reviews) + len(frequency))
+        negative = (frequency[word][1] + 1)/(len(words_in_negative_reviews) + len(frequency))
+
+        probability[word] = [positive, negative]
+
+    return probability	    
+
+
+#word probability in positive and negative reviews
+
+word_frequency = calculate_word_frequency(words_in_positive_reviews, words_in_negative_reviews)
+print(word_frequency)
+
+word_probability = calculate_word_probability(word_frequency, words_in_positive_reviews, words_in_negative_reviews)
+print(word_probability)
+
+
+
+def classify(text, positive_reviews, negative_reviews, probability):
+    #extract words from textt
+    words = extract_words(text)
+
+    #ratio of positive andnegative reviews
+    total_reviews = positive_reviews + negative_reviews
+
+    positive = positive_reviews / total_reviews
+    negative = negative_reviews / total_reviews
+
+    #probability of each word for positive and negative reviews
+    for word in words:
+        if word in probability.keys():
+            positive = positive * probability[word][0]
+            negative = negative * probability[word][1]
+    summation = positive + negative
+
+    return (positive/summation, negative/summation)
+
+
+   # test the classifier with unseen movie reviews
+
+unseen_reviews = ["Beautiful, amazing movie, I loved it!", "Boring, not worth it", "Amazing, I liked it so much", "Annoying and boring", "No idea"]
+
+print("Words in unseen reviews \n")
+
+for review in unseen_reviews:
+    print(extract_words(review))
+
+print("\nClassification \n")
+
+for review in unseen_reviews:
+    result = classify(review, positive_reviews, negative_reviews, word_probability)
+
+    positive = result[0]
+    negative = result[1]
+
+    if abs(positive - negative) > 0.25:
+        if positive > negative:
+            print(review, "is", float("%.4f" % positive), "positive")
+        else:
+            print(review, "is", float("%.4f" % negative), "negative")
+    else:
+        print(review, "is neutral", float("%.4f" % positive), "positive", float("%.4f" % negative), "negative")
+
+
+
+from nltk.corpus import stopwords
+
+#set of english stop words
+
+stop_words = set(stopwords.words('english'))
+
+print(stop_words)
+
