@@ -1,0 +1,55 @@
+"""
+
+Using functions as formal parameters improves code reusability and allows changing the behavior of algorithms at run-time. For example, a sorting algorithm may sort data in ascending or descending order.
+
+"""
+
+# find_min(data) finds the minimum value of a list
+
+def find_min(data):
+    m = data[0]
+
+    for value in data:
+        if value < m:
+            m = value
+
+    return m
+
+# find_max(data) finds the maximum value of a list
+
+def find_max(data):
+    m = data[0]
+
+    for value in data:
+        if value > m:
+            m = value
+
+    return m
+
+# find(data, compare) finds the min or the max value of a list
+
+def find(data, compare):
+    m = data[0]
+
+    for value in data:
+        if compare(value, m) < 0:
+            m = value
+
+    return m
+
+def minimum(a, b):
+    return a - b
+
+def maximum(a, b):
+    return b - a
+
+	
+if __name__ == "__main__":
+
+    numbers = [11, 30, 9, 5, 9, 2, 15, 1, 7]
+
+    print("Min", find_min(numbers))
+    print("Max", find_max(numbers))
+
+    print("Min", find(numbers, minimum))
+    print("Max", find(numbers, maximum))
